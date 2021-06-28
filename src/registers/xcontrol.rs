@@ -16,8 +16,18 @@ bitflags! {
         /// Enables 256-bit SSE
         /// Must be set to enable AVX
         const YMM = 1<<2;
+        /// When set, MPX instructions are enabled and the bound registers BND0-BND3 can be managed by XSAVE.
+        const BNDREG = 1 << 3;
+        /// When set, MPX instructions can be executed and XSAVE can manage the BNDCFGU and BNDSTATUS registers.
+        const BNDCSR = 1 << 4;
+        /// If set, AVX-512 instructions can be executed and XSAVE can manage the K0-K7 mask registers.
+        const OPMASK = 1 << 5;
+        /// If set, AVX-512 instructions can be executed and XSAVE can be used to manage the upper halves of the lower ZMM registers.
+        const ZMM_HI256 = 1 << 6;
+        /// If set, AVX-512 instructions can be executed and XSAVE can manage the upper ZMM registers.
+        const HI16_ZMM = 1 << 7;
         /// When set, PKRU state management is supported by
-        /// ZSAVE/XRSTOR
+        /// XSAVE/XRSTOR
         const MPK = 1<<9;
         /// When set the Lightweight Profiling extensions are enabled
         const LWP = 1<<62;
@@ -68,6 +78,13 @@ mod x86_64 {
             let old_value = Self::read_raw();
             let reserved = old_value & !(XCr0Flags::all().bits());
             let new_value = reserved | flags.bits();
+            assert!(flags.contains(XCr0Flags::X87), "The X87 flag must be set");
+            assert!((flags.contains(XCr0Flags::AVX) && flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)) || !(flags.contains(XCr0Flags::AVX) && flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)), "You must enable AVX to set or unset any of XCR0.opmask, XCR0.ZMM_Hi256, and XCR0.Hi16_ZMM");
+            if !flags.contains(XCr0Flags::AVX) && (flags.contains(XCr0Flags::OPMASK) || flags.contains(XCr0Flags::ZMM_HI256) || flags.contains(XCr0Flags::HI16_ZMM)) {
+            panic!("You must have AVX enabled to set XCR0.opmask, XCR0.ZMM_Hi256, or XCR0.Hi16_ZMM");
+            }
+            assert!((flags.contains(XCr0Flags::BNDREG) && flags.contains(XCr0Flags::BNDCSR)) || !(flags.contains(XCr0Flags::BNDREG) && flags.contains(XCr0Flags::BNDCSR)), "BNDREG and BNDCSR must be set and unset together");
+            assert!((flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)) || !(flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)), "You must set or unset all of XCR0.opmask, XCR0.ZMM_Hi256, and XCR0.Hi16_ZMM");
 
             Self::write_raw(new_value);
         }

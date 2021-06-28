@@ -24,6 +24,8 @@ bitflags! {
         ///
         /// This flags allows lazily saving x87/MMX/SSE instructions on hardware context switches.
         const TASK_SWITCHED = 1 << 3;
+        /// Indicates support of 387DX math coprocessor instructions when set
+        const EXTENSION_TYPE = 1 << 4;
         /// Enables the native error reporting mechanism for x87 FPU errors.
         const NUMERIC_ERROR = 1 << 5;
         /// Controls whether supervisor-level writes to read-only pages are inhibited.
@@ -114,14 +116,20 @@ bitflags! {
         const PCID = 1 << 17;
         /// Enables extendet processor state management instructions, including XGETBV and XSAVE.
         const OSXSAVE = 1 << 18;
+        /// When set, the `LOADIWKEY` instruction is available; additionally, if system firmware has activated the AES key locker instructions, register EBX of CPUID leaf 0x19, bit 0 (AESKLE) is set and the AES key locker instructions are enabled. See the [Intel Key Locker Specification](https://software.intel.com/content/www/us/en/develop/download/intel-key-locker-specification.html) for information on this feature.
+        const KEY_LOCKER = 1 << 19;
         /// Prevents the execution of instructions that reside in pages accessible by user-mode
         /// software when the processor is in supervisor-mode.
         const SUPERVISOR_MODE_EXECUTION_PROTECTION = 1 << 20;
         /// Enables restrictions for supervisor-mode software when reading data from user-mode
         /// pages.
         const SUPERVISOR_MODE_ACCESS_PREVENTION = 1 << 21;
-        /// Enables 4-level paging to associate each linear address with a protection key.
+        /// Enables 4-level and 5-level paging to associate each linear address with a protection key in user mode.
         const PROTECTION_KEY = 1 << 22;
+        /// When set, enables intel control-flow enforcement technology. See chapter 18 of the Intel software developer manuals, volume 1, for more information.
+        const CONTROL_FLOW_ENFORCEMENT = 1 << 23;
+        /// When set, allows 4-level and 5-level paging implementations to use the `IA32_PKRS` MSR to specify, for each protection key, whether supervisor-mode linear addresses with a particular protection key can be read or written.
+        const PROTECTION_KEY_SUPERVISOR = 1 << 24;
     }
 }
 
