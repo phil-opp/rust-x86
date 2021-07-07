@@ -82,6 +82,7 @@ mod x86_64 {
         /// Write XCR0 flags.
         ///
         /// Preserves the value of reserved fields.
+        /// Panics if invalid combinations of [`XCr0Flags`] are set.
         ///
         /// ## Safety
         ///
@@ -92,13 +93,32 @@ mod x86_64 {
             let old_value = Self::read_raw();
             let reserved = old_value & !(XCr0Flags::all().bits());
             let new_value = reserved | flags.bits();
+
             assert!(flags.contains(XCr0Flags::X87), "The X87 flag must be set");
-            assert!((flags.contains(XCr0Flags::AVX) && flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)) || !(flags.contains(XCr0Flags::AVX) && flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)), "You must enable AVX to set or unset any of XCR0.opmask, XCR0.ZMM_Hi256, and XCR0.Hi16_ZMM");
-            if !flags.contains(XCr0Flags::AVX) && (flags.contains(XCr0Flags::OPMASK) || flags.contains(XCr0Flags::ZMM_HI256) || flags.contains(XCr0Flags::HI16_ZMM)) {
-            panic!("You must have AVX enabled to set XCR0.opmask, XCR0.ZMM_Hi256, or XCR0.Hi16_ZMM");
+            if flags.contains(XCr0Flags::YMM) {
+                assert!(
+                    flags.contains(XCr0Flags::SSE),
+                    "AVX/YMM cannot be enabled without enabling SSE"
+                );
             }
-            assert!((flags.contains(XCr0Flags::BNDREG) && flags.contains(XCr0Flags::BNDCSR)) || !(flags.contains(XCr0Flags::BNDREG) && flags.contains(XCr0Flags::BNDCSR)), "BNDREG and BNDCSR must be set and unset together");
-            assert!((flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)) || !(flags.contains(XCr0Flags::OPMASK) && flags.contains(XCr0Flags::ZMM_HI256) && flags.contains(XCr0Flags::HI16_ZMM)), "You must set or unset all of XCR0.opmask, XCR0.ZMM_Hi256, and XCR0.Hi16_ZMM");
+            let mpx = XCr0Flags::BNDREG | XCr0Flags::BNDCSR;
+            if flags.intersects(mpx) {
+                assert!(
+                    flags.contains(mpx),
+                    "MPX flags XCr0.BNDREG and XCr0.BNDCSR must be set and unset together"
+                );
+            }
+            let avx512 = XCr0Flags::OPMASK | XCr0Flags::ZMM_HI256 | XCr0Flags::HI16_ZMM;
+            if flags.intersects(avx512) {
+                assert!(
+                    flags.contains(XCr0Flags::YMM),
+                    "AVX-512 cannot be enabled without enabling AVX/YMM"
+                );
+                assert!(
+                    flags.contains(avx512),
+                    "AVX-512 flags XCR0.opmask, XCR0.ZMM_Hi256, and XCR0.Hi16_ZMM must be set and unset together"
+                );
+            }
 
             Self::write_raw(new_value);
         }
