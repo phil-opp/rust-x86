@@ -7,29 +7,43 @@ pub struct XCr0;
 
 bitflags! {
     /// Configuration flags of the XCr0 register.
+    ///
+    /// For MPX, [`BNDREG`](XCr0Flags::BNDREG) and [`BNDCSR`](XCr0Flags::BNDCSR) must be set/unset simultaneously.
+    /// For AVX-512, [`OPMASK`](XCr0Flags::OPMASK), [`ZMM_HI256`](XCr0Flags::ZMM_HI256), and [`HI16_ZMM`](XCr0Flags::HI16_ZMM) must be set/unset simultaneously.
     pub struct XCr0Flags: u64 {
-        /// Enables x87 FPU
+        /// Enables using the x87 FPU state
+        /// with `XSAVE`/`XRSTOR`.
+        ///
+        /// Must be set.
         const X87 = 1;
-        /// Enables 128-bit (legacy) SSE
-        /// Must be set to enable AVX and YMM
+        /// Enables using MXCSR and the XMM registers
+        /// with `XSAVE`/`XRSTOR`.
+        ///
+        /// Must be set if [`YMM`](XCr0Flags::YMM) is set.
         const SSE = 1<<1;
-        /// Enables 256-bit SSE
-        /// Must be set to enable AVX
+        /// Enables AVX instructions and using the upper halves of the YMM registers
+        /// with `XSAVE`/`XRSTOR`.
         const YMM = 1<<2;
-        /// When set, MPX instructions are enabled and the bound registers BND0-BND3 can be managed by XSAVE.
+        /// Enables MPX instructions and using the BND0-BND3 bound registers
+        /// with `XSAVE`/`XRSTOR` (Intel Only).
         const BNDREG = 1 << 3;
-        /// When set, MPX instructions can be executed and XSAVE can manage the BNDCFGU and BNDSTATUS registers.
+        /// Enables MPX instructions and using the BNDCFGU and BNDSTATUS registers
+        /// with `XSAVE`/`XRSTOR` (Intel Only).
         const BNDCSR = 1 << 4;
-        /// If set, AVX-512 instructions can be executed and XSAVE can manage the K0-K7 mask registers.
+        /// Enables AVX-512 instructions and using the K0-K7 mask registers
+        /// with `XSAVE`/`XRSTOR` (Intel Only).
         const OPMASK = 1 << 5;
-        /// If set, AVX-512 instructions can be executed and XSAVE can be used to manage the upper halves of the lower ZMM registers.
+        /// Enables AVX-512 instructions and using the upper halves of the lower ZMM registers
+        /// with `XSAVE`/`XRSTOR` (Intel Only).
         const ZMM_HI256 = 1 << 6;
-        /// If set, AVX-512 instructions can be executed and XSAVE can manage the upper ZMM registers.
+        /// Enables AVX-512 instructions and using the upper ZMM registers
+        /// with `XSAVE`/`XRSTOR` (Intel Only).
         const HI16_ZMM = 1 << 7;
-        /// When set, PKRU state management is supported by
-        /// XSAVE/XRSTOR
+        /// Enables using the PKRU register
+        /// with `XSAVE`/`XRSTOR`.
         const MPK = 1<<9;
-        /// When set the Lightweight Profiling extensions are enabled
+        /// Enables Lightweight Profiling extensions and managing LWP state
+        /// with `XSAVE` (AMD Only).
         const LWP = 1<<62;
     }
 }
